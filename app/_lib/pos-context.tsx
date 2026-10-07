@@ -14,12 +14,16 @@ import {
 
 type Notice = { id: number; text: string };
 
+// A validated payment waiting for the cashier to confirm it.
+export type PendingPayment = { paid: number; change: number };
+
 type PosState = {
   lines: OrderLine[];
   total: number;
   ticketId: string;
   cashInput: string;
   paymentError: string | null;
+  pending: PendingPayment | null;
   receipt: Receipt | null;
   completedCount: number;
   salesTotal: number;
@@ -32,6 +36,8 @@ type PosState = {
   clearOrder: () => void;
   updateCashInput: (value: string) => void;
   pay: (badInput: boolean) => void;
+  confirmPayment: () => void;
+  cancelPayment: () => void;
   startNewTransaction: () => void;
   notify: (text: string) => void;
 };
@@ -49,6 +55,7 @@ export function PosProvider({ images, children }: { images: ProductImages; child
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cashInput, setCashInput] = useState("");
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingPayment | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [ticketNumber, setTicketNumber] = useState(1);
   const [completedCount, setCompletedCount] = useState(0);
@@ -115,6 +122,8 @@ export function PosProvider({ images, children }: { images: ProductImages; child
     setPaymentError(null);
   }
 
+  // Step 1: validate the cash. A valid amount opens the confirmation popup;
+  // nothing is charged yet.
   function pay(badInput: boolean) {
     const result = validatePayment(cashInput, total, badInput);
     if (!result.ok) {
@@ -122,16 +131,27 @@ export function PosProvider({ images, children }: { images: ProductImages; child
       return;
     }
     setPaymentError(null);
+    setPending({ paid: result.paid, change: result.change });
+  }
+
+  // Step 2: the cashier confirmed with the customer, so complete the sale.
+  function confirmPayment() {
+    if (!pending) return;
     setReceipt({
       ticketId,
       issuedAt: new Date(),
       lines,
       total,
-      paid: result.paid,
-      change: result.change,
+      paid: pending.paid,
+      change: pending.change,
     });
+    setPending(null);
     setCompletedCount((n) => n + 1);
     setSalesTotal((sum) => sum + total);
+  }
+
+  function cancelPayment() {
+    setPending(null);
   }
 
   function startNewTransaction() {
@@ -149,6 +169,7 @@ export function PosProvider({ images, children }: { images: ProductImages; child
     ticketId,
     cashInput,
     paymentError,
+    pending,
     receipt,
     completedCount,
     salesTotal,
@@ -161,6 +182,8 @@ export function PosProvider({ images, children }: { images: ProductImages; child
     clearOrder,
     updateCashInput,
     pay,
+    confirmPayment,
+    cancelPayment,
     startNewTransaction,
     notify,
   };

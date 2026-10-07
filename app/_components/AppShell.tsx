@@ -1,25 +1,39 @@
 "use client";
 
 import type { ReactNode } from "react";
+import ConfirmModal from "./ConfirmModal";
 import Icon from "./Icon";
 import ReceiptModal from "./ReceiptModal";
 import Sidebar, { MobileNav } from "./Sidebar";
 import { usePos } from "../_lib/pos-context";
 
-// Frame shared by every page: sidebar, receipt popup, and the notice pill.
+// Frame shared by every page: sidebar, confirmation and receipt popups, and the notice pill.
 export default function AppShell({ children }: { children: ReactNode }) {
-  const { receipt, startNewTransaction, notice } = usePos();
+  const pos = usePos();
+  const { receipt, pending, startNewTransaction, notice } = pos;
 
   return (
     <>
       <div
-        inert={receipt !== null}
+        inert={receipt !== null || pending !== null}
         className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden xl:flex-row"
       >
         <Sidebar />
         <MobileNav />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">{children}</div>
       </div>
+
+      {pending && (
+        <ConfirmModal
+          ticketId={pos.ticketId}
+          lines={pos.lines}
+          total={pos.total}
+          payment={pending}
+          images={pos.images}
+          onConfirm={pos.confirmPayment}
+          onCancel={pos.cancelPayment}
+        />
+      )}
 
       {receipt && <ReceiptModal receipt={receipt} onNewTransaction={startNewTransaction} />}
 

@@ -93,7 +93,7 @@ export default function PaymentForm({ total, value, error, disabled, onChange, o
             type="submit"
             className="mt-1 h-14 rounded-2xl bg-brand text-base font-bold text-white shadow-card transition hover:bg-brand-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-line disabled:text-muted disabled:shadow-none"
           >
-            Confirm Payment · {formatPeso(total)}
+            Review Payment · {formatPeso(total)}
           </button>
         </fieldset>
       </form>
